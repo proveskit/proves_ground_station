@@ -1,0 +1,22 @@
+{
+  "name": "flight-controller",
+  "packageManager": "yarn@4.2.2",
+  "private": true,
+  "scripts": {
+    "build": "yarn workspaces foreach -A run build",
+    "build:frontend": "yarn workspace frontend build",
+    "build:backend": "yarn workspace server build",
+    "dev:frontend": "yarn workspace frontend dev",
+    "dev:backend": "yarn workspace server dev",
+    "dev": "concurrently \"yarn dev:frontend\" \"yarn dev:backend\"",
+    "start:backend": "yarn workspace server start"
+  },
+  "workspaces": {
+    "packages": [
+      "packages/*"
+    ]
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
