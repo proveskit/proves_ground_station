@@ -1,11 +1,14 @@
 import express, { Express, Request, Response } from "express";
-import dotenv from "dotenv";
 import path from "path";
-
-dotenv.config();
+import cors from "cors";
+import { apiRouter } from "./api";
+import { createServer } from "http";
 
 const app: Express = express();
+app.use(cors());
+
 const port = 3000;
+export const server = createServer(app);
 
 // This code makes sure that any request that does not matches a static file
 // in the build folder, will just serve index.html. Client side routing is
@@ -23,15 +26,15 @@ app.use((req, res, next) => {
     res.sendFile(path.join(__dirname, "build", "index.html"));
   }
 });
-
 app.use(express.static(path.join(__dirname, "build")));
 
-// ROUTES
+// ROUTERS
+app.use("/api", apiRouter);
 
-app.get("/api/test", (req, res) => {
-  res.send("Test route");
-});
+// Initialize socket.io server
+import { initializeWs } from "./socket";
+initializeWs(server);
 
-app.listen(port, () => {
+server.listen(port, () => {
   console.log(`[server]: Server is running at http://localhost:${port}`);
 });

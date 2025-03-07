@@ -1,16 +1,22 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { FaBug, FaCheck, FaInfoCircle } from "react-icons/fa";
 import { IoWarning } from "react-icons/io5";
 import { MdError, MdErrorOutline } from "react-icons/md";
 import { z } from "zod";
+import { WebsocketContext } from "../context/WebsocketContext";
 
 export default function Home() {
   const [msgs, setMsgs] = useState<string[]>([]);
   const [cmdInput, setCmdInput] = useState("");
+  const socket = useContext(WebsocketContext);
 
   useEffect(() => {
-    // add event listener for getting data
-  }, []);
+    if (socket) {
+      socket.on("terminal-data", (data) => {
+        setMsgs((prev) => [data, ...prev]);
+      });
+    }
+  }, [socket]);
 
   return (
     <div className="w-screen p-4">
@@ -30,13 +36,16 @@ export default function Home() {
       <div className="flex h-12 items-center gap-2">
         <input
           type="text"
+          value={cmdInput}
           onChange={(evt) => setCmdInput(evt.target.value)}
           className="border-2 h-10 rounded-md border-neutral-600"
         />
         <button
           className="bg-green-600 text-white px-3 py-2 rounded-md hover:cursor-pointer"
           onClick={() => {
-            // add function for sending message
+            console.log(cmdInput);
+            socket?.emit("send-command", cmdInput);
+            setCmdInput("");
           }}
         >
           Send Command
@@ -44,7 +53,7 @@ export default function Home() {
         <button
           className="bg-green-600 text-white px-3 py-2 rounded-md hover:cursor-pointer"
           onClick={() => {
-            // send enter-repl
+            socket?.emit("enter-repl");
           }}
         >
           Enter REPL
@@ -52,7 +61,7 @@ export default function Home() {
         <button
           className="bg-red-600 text-white px-3 py-2 rounded-md hover:cursor-pointer"
           onClick={() => {
-            // send exit-repl
+            socket?.emit("exit-repl");
           }}
         >
           Exit REPL

@@ -1,5 +1,7 @@
 import { useContext, useEffect, useState } from "react";
 import { NavLink, Outlet } from "react-router";
+import { WebsocketContext } from "../context/WebsocketContext";
+import { SatelliteContext } from "../context/SatelliteContext";
 
 const LINKS: { name: string; href: string }[] = [
   { name: "Logs", href: "/" },
@@ -11,6 +13,27 @@ const LINKS: { name: string; href: string }[] = [
 export default function Navbar() {
   const [usbDevices, setUsbDevices] = useState<string[]>([]);
   const [activeDevice, setActiveDevice] = useState<string>("");
+
+  const socket = useContext(WebsocketContext);
+  const connectionCtx = useContext(SatelliteContext)!;
+
+  useEffect(() => {
+    if (socket) {
+      socket.on("usb-devices", (data) => {
+        setUsbDevices(data);
+        setActiveDevice(data[0]);
+      });
+
+      socket.on("check-connected", (data) => {
+        console.log("CHECKED CONNECTED");
+        console.log(data);
+        connectionCtx.setConnection(data);
+      });
+
+      socket.emit("check-connected");
+      socket.emit("usb-devices");
+    }
+  }, [socket]);
 
   return (
     <div>
@@ -34,11 +57,16 @@ export default function Navbar() {
                 </option>
               ))}
             </select>
-            {true === true ? (
+            {!connectionCtx.connection.connected ? (
               <button
                 className="bg-white text-black px-3 py-2 rounded-md hover:cursor-pointer"
                 onClick={() => {
-                  // add connection support
+                  socket?.emit("connect-device", activeDevice);
+                  connectionCtx.setConnection({
+                    connected: true,
+                    deviceName: activeDevice,
+                    connectedAt: Date.now(),
+                  });
                 }}
               >
                 Connect
@@ -47,7 +75,8 @@ export default function Navbar() {
               <button
                 className="bg-red-500 text-white px-3 py-2 rounded-md hover:cursor-pointer"
                 onClick={() => {
-                  // add disconnection support
+                  socket?.emit("disconnect-device");
+                  connectionCtx.setConnection({ connected: false });
                 }}
               >
                 Disconnect
