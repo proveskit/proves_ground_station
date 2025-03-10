@@ -32,6 +32,7 @@ export default function Navbar() {
       socket.emit("check-connected");
       socket.emit("usb-devices");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socket]);
 
   return (
