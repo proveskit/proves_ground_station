@@ -15,4 +15,4 @@ runs:
 
     - name: Install dependencies
       shell: bash
-      run: yarn install
+      run: HUSKY=0 yarn install

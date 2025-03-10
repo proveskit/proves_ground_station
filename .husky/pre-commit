@@ -1,0 +1,3 @@
+yarn format:check
+yarn typecheck
+yarn lint 
