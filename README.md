@@ -16,4 +16,4 @@ yarn install
 yarn dev
 ```
 
-Ensure you have [prettier](https://prettier.io/) set up on your editor for code formatting, as CI will fail if code isn't formatted properly.
+Ensure you have [prettier](https://prettier.io/) set up on your editor for code formatting, as CI & the Husky pre-commit hook will fail if code isn't formatted to prettier's standards.
