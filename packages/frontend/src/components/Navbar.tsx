@@ -32,7 +32,7 @@ export default function Navbar() {
       socket.emit("check-connected");
       socket.emit("usb-devices");
     }
-  }, [socket, connectionCtx]);
+  }, [socket]);
 
   return (
     <div>
