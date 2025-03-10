@@ -1,8 +1,8 @@
-import express, { Express, Request, Response } from "express";
-import path from "path";
 import cors from "cors";
-import { apiRouter } from "./api";
+import express, { Express } from "express";
 import { createServer } from "http";
+import path from "path";
+import { apiRouter } from "./api";
 
 const app: Express = express();
 app.use(cors());

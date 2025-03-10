@@ -1,6 +1,7 @@
 import { useContext, useEffect, useState } from "react";
 import { FaBug, FaCheck, FaInfoCircle } from "react-icons/fa";
 import { IoWarning } from "react-icons/io5";
+import { IconType } from "react-icons/lib";
 import { MdError, MdErrorOutline } from "react-icons/md";
 import { z } from "zod";
 import { WebsocketContext } from "../context/WebsocketContext";
@@ -28,7 +29,7 @@ export default function Home() {
           try {
             const validatedLog = LogSchema.parse(JSON.parse(msg));
             return <FormattedLog log={validatedLog} key={idx} />;
-          } catch (e) {
+          } catch {
             return <p>{msg}</p>;
           }
         })}
@@ -81,10 +82,10 @@ const LogSchema = z
 
 type Log = z.infer<typeof LogSchema>;
 
-const omit = (obj, arr) =>
+const omit = (obj: object, arr: unknown[]) =>
   Object.fromEntries(Object.entries(obj).filter(([k]) => !arr.includes(k)));
 
-const LOG_ICONS: { [key: string]: any } = {
+const LOG_ICONS: { [key: string]: IconType } = {
   NOTSET: FaCheck,
   DEBUG: FaBug,
   INFO: FaInfoCircle,

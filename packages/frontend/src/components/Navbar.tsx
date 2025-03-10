@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from "react";
 import { NavLink, Outlet } from "react-router";
-import { WebsocketContext } from "../context/WebsocketContext";
 import { SatelliteContext } from "../context/SatelliteContext";
+import { WebsocketContext } from "../context/WebsocketContext";
 
 const LINKS: { name: string; href: string }[] = [
   { name: "Logs", href: "/" },
@@ -25,7 +25,6 @@ export default function Navbar() {
       });
 
       socket.on("check-connected", (data) => {
-        console.log("CHECKED CONNECTED");
         console.log(data);
         connectionCtx.setConnection(data);
       });
@@ -33,7 +32,7 @@ export default function Navbar() {
       socket.emit("check-connected");
       socket.emit("usb-devices");
     }
-  }, [socket]);
+  }, [socket, connectionCtx]);
 
   return (
     <div>
