@@ -14,7 +14,8 @@
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json}\"",
     "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json}\"",
     "typecheck": "yarn workspaces foreach -A run typecheck",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "prepare": "husky"
   },
   "workspaces": {
     "packages": [
@@ -22,7 +23,8 @@
     ]
   },
   "devDependencies": {
-    "concurrently": "^9.1.2"
+    "concurrently": "^9.1.2",
+    "husky": "^9.1.7"
   },
   "dependencies": {
     "eslint": "^9.22.0",
