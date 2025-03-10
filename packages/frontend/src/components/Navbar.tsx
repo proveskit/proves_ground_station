@@ -1,4 +1,5 @@
 import { useContext, useEffect, useState } from "react";
+import { FaSync } from "react-icons/fa";
 import { NavLink, Outlet } from "react-router";
 import { SatelliteContext } from "../context/SatelliteContext";
 import { WebsocketContext } from "../context/WebsocketContext";
@@ -25,7 +26,6 @@ export default function Navbar() {
       });
 
       socket.on("check-connected", (data) => {
-        console.log(data);
         connectionCtx.setConnection(data);
       });
 
@@ -34,6 +34,10 @@ export default function Navbar() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socket]);
+
+  const refreshDevices = () => {
+    socket?.emit("usb-devices");
+  };
 
   return (
     <div>
@@ -47,41 +51,49 @@ export default function Navbar() {
         </div>
         <div>
           <div className="flex gap-3 items-center">
-            <select
-              value={activeDevice}
-              className="border-2 h-8 rounded-sm border-neutral-400"
-            >
-              {usbDevices.map((device, idx) => (
-                <option onClick={() => setActiveDevice(device)} key={idx}>
-                  {device}
-                </option>
-              ))}
-            </select>
-            {!connectionCtx.connection.connected ? (
-              <button
-                className="bg-white text-black px-3 py-2 rounded-md hover:cursor-pointer"
-                onClick={() => {
-                  socket?.emit("connect-device", activeDevice);
-                  connectionCtx.setConnection({
-                    connected: true,
-                    deviceName: activeDevice,
-                    connectedAt: Date.now(),
-                  });
-                }}
+            <button onClick={refreshDevices} className="hover:cursor-pointer">
+              <FaSync />
+            </button>
+            {usbDevices.length > 0 ? (
+              <select
+                value={activeDevice}
+                className="border-2 h-8 rounded-sm border-neutral-400"
               >
-                Connect
-              </button>
+                {usbDevices.map((device, idx) => (
+                  <option onClick={() => setActiveDevice(device)} key={idx}>
+                    {device}
+                  </option>
+                ))}
+              </select>
             ) : (
-              <button
-                className="bg-red-500 text-white px-3 py-2 rounded-md hover:cursor-pointer"
-                onClick={() => {
-                  socket?.emit("disconnect-device");
-                  connectionCtx.setConnection({ connected: false });
-                }}
-              >
-                Disconnect
-              </button>
+              <p className="text-white">No devices found!</p>
             )}
+            {usbDevices.length > 0 &&
+              (!connectionCtx.connection.connected ? (
+                <button
+                  className="bg-white text-black px-3 py-2 rounded-md hover:cursor-pointer"
+                  onClick={() => {
+                    socket?.emit("connect-device", activeDevice);
+                    connectionCtx.setConnection({
+                      connected: true,
+                      deviceName: activeDevice,
+                      connectedAt: Date.now(),
+                    });
+                  }}
+                >
+                  Connect
+                </button>
+              ) : (
+                <button
+                  className="bg-red-500 text-white px-3 py-2 rounded-md hover:cursor-pointer"
+                  onClick={() => {
+                    socket?.emit("disconnect-device");
+                    connectionCtx.setConnection({ connected: false });
+                  }}
+                >
+                  Disconnect
+                </button>
+              ))}
           </div>
         </div>
       </div>

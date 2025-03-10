@@ -1,7 +1,7 @@
-import { Server, Socket } from "socket.io";
-import { Server as HttpServer } from "http";
 import { exec } from "child_process";
+import { Server as HttpServer } from "http";
 import { ReadlineParser, SerialPort } from "serialport";
+import { Server, Socket } from "socket.io";
 
 type ConnectionState = ConnectedConnectionState | DisconnectedConnectionState;
 
@@ -122,7 +122,7 @@ export function initializeWs(server: HttpServer) {
   });
 
   io.on("connection", (socket) => {
-    console.log("New Connection");
+    console.log("New Connection: ", socket.id);
 
     if (manager.connected.connected === true) {
       manager.registerListeners(socket);
@@ -133,7 +133,6 @@ export function initializeWs(server: HttpServer) {
       exec("ls /dev/tty.usbmodem*", (error, stdout) => {
         if (error) {
           socket.emit("usb-devices", []);
-          console.error(error);
           return;
         }
         socket.emit(
