@@ -12,7 +12,7 @@ To run the project and start developing or testing:
 ```sh
 git clone https://github.com/proveskit/proves_ground_station
 cd proves_ground_station
-yarn install
+yarn
 yarn dev
 ```
 
