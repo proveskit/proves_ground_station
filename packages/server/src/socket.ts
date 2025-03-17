@@ -1,6 +1,7 @@
 import { exec } from "child_process";
 import { Server as HttpServer } from "http";
 import { ReadlineParser, SerialPort } from "serialport";
+import { autoDetect } from "@serialport/bindings-cpp";
 import { Server, Socket } from "socket.io";
 
 type ConnectionState = ConnectedConnectionState | DisconnectedConnectionState;
@@ -142,6 +143,16 @@ export function initializeWs(server: HttpServer) {
       });
     });
 
+    socket.on("check-proves-connected", () => {
+      findDevicePort().then((result) => {
+        if (result) {
+          socket.emit("check-proves-connected", { status: true, path: result });
+        } else {
+          socket.emit("check-proves-connected", { status: false, path: null });
+        }
+      });
+    });
+
     socket.on("connect-device", (device) => {
       manager.connect(socket, device);
     });
@@ -154,4 +165,25 @@ export function initializeWs(server: HttpServer) {
       socket.emit("check-connected", manager.connected);
     });
   });
+}
+
+// Find the PROVESKit serial port
+async function findDevicePort() {
+  const bindings = autoDetect();
+
+  try {
+    const ports = await bindings.list();
+    const device = ports.find((port) => {
+      return port.vendorId === "1209" && port.productId === "0011";
+    });
+
+    if (device) {
+      return device.path;
+    } else {
+      return null;
+    }
+  } catch (e) {
+    console.error("Failed to search for ports: ", e);
+    return null;
+  }
 }

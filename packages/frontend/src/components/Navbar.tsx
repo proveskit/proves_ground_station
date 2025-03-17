@@ -29,6 +29,10 @@ export default function Navbar() {
         connectionCtx.setConnection(data);
       });
 
+      socket.on("check-proves-connected", (result) => {
+        console.log(result);
+      });
+
       socket.emit("check-connected");
       socket.emit("usb-devices");
     }
@@ -37,6 +41,10 @@ export default function Navbar() {
 
   const refreshDevices = () => {
     socket?.emit("usb-devices");
+  };
+
+  const checkProvesConnected = () => {
+    socket?.emit("check-proves-connected");
   };
 
   return (
@@ -51,6 +59,12 @@ export default function Navbar() {
         </div>
         <div>
           <div className="flex gap-3 items-center">
+            <button
+              onClick={checkProvesConnected}
+              className="hover:cursor-pointer"
+            >
+              Check Proves Connected
+            </button>
             <button onClick={refreshDevices} className="hover:cursor-pointer">
               <FaSync />
             </button>
