@@ -17,6 +17,10 @@ export default function Home() {
         setMsgs((prev) => [data, ...prev]);
       });
     }
+
+    return () => {
+      socket?.off("terminal-data");
+    };
   }, [socket]);
 
   return (
