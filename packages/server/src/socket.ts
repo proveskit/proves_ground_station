@@ -148,15 +148,23 @@ export function initializeWs(server: HttpServer) {
   });
 }
 
-// Find the PROVESKit serial port
+const PROVESKIT_PIDS = {
+  OLD_V4: "0011",
+  V4: "e004",
+};
+
+// Find a valid PROVESKit serial port
 async function findDevicePort() {
   const bindings = autoDetect();
 
   try {
     const ports = await bindings.list();
     const device = ports.find((port) => {
-      // check for the proveskit vendorId and productId
-      return port.vendorId === "1209" && port.productId === "0011";
+      // Check for a valid productId
+      return (
+        port.vendorId === "1209" &&
+        Object.values(PROVESKIT_PIDS).includes(port.productId ?? "")
+      );
     });
 
     if (device) {
@@ -196,10 +204,10 @@ async function loopUntilUsbConnected() {
         break;
       }
 
-      await new Promise((res) => setTimeout(res, 5000));
+      await new Promise((res) => setTimeout(res, 1000));
     } catch (e) {
       console.error("Failed to check for USB devices: ", e);
-      await new Promise((res) => setTimeout(res, 5000));
+      await new Promise((res) => setTimeout(res, 1000));
     }
   }
 }
