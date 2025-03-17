@@ -1,6 +1,6 @@
-import { exec } from "child_process";
 import { Server as HttpServer } from "http";
 import { ReadlineParser, SerialPort } from "serialport";
+import { autoDetect } from "@serialport/bindings-cpp";
 import { Server, Socket } from "socket.io";
 
 type ConnectionState = ConnectedConnectionState | DisconnectedConnectionState;
@@ -26,6 +26,9 @@ class SerialManager {
     this.parser = null;
     this.connected = { connected: false };
     this.listeners = [];
+
+    // begin looping until the usb is connected
+    loopUntilUsbConnected();
   }
 
   registerListeners(socket: Socket) {
@@ -37,22 +40,21 @@ class SerialManager {
     this.listeners.push("send-command");
     this.listeners.push("enter-repl");
     this.listeners.push("exit-repl");
-    this.listeners.push("check-connected");
 
     // register listeners
     socket.on("send-command", (msg) => this.sendMessage(msg));
     socket.on("enter-repl", () => this.enterRepl());
     socket.on("exit-repl", () => this.exitRepl());
-    socket.on("check-connected", () => {
-      this.checkConnected(socket);
-    });
   }
 
-  connect(socket: Socket, device: string) {
+  async connect() {
     if (this.conn) return;
 
+    const device = await checkProvesConnected();
+    if (!device.status) return;
+
     this.conn = new SerialPort({
-      path: device,
+      path: device.path,
       baudRate: 9600,
       dataBits: 8,
       parity: "none",
@@ -61,32 +63,39 @@ class SerialManager {
 
     this.parser = this.conn.pipe(new ReadlineParser({ delimiter: "\r\n" }));
 
+    this.conn.on("close", () => {
+      console.log("USB disconnected");
+      io.emit("usb-disconnected");
+      this.disconnect();
+    });
+
     this.connected = {
       connected: true,
-      deviceName: device,
+      deviceName: device.path,
       connectedAt: Date.now(),
     };
 
-    this.registerListeners(socket);
+    io.emit("usb-connected", this.connected);
   }
 
-  disconnect(socket: Socket) {
+  disconnect() {
     if (!this.conn) return;
 
-    this.conn?.close();
     this.conn = null;
     this.parser = null;
     this.connected = { connected: false };
 
     for (const l of this.listeners) {
-      socket.removeAllListeners(l);
+      io.removeAllListeners(l);
     }
 
     this.listeners = [];
+
+    // begin looping until the usb is connected again
+    loopUntilUsbConnected();
   }
 
   checkConnected(socket: Socket) {
-    console.log("???????????????/");
     socket.emit("check-connected", this.connected);
   }
 
@@ -129,29 +138,68 @@ export function initializeWs(server: HttpServer) {
     }
 
     // Websocket Events
-    socket.on("usb-devices", () => {
-      exec("ls /dev/tty.usbmodem*", (error, stdout) => {
-        if (error) {
-          socket.emit("usb-devices", []);
-          return;
-        }
-        socket.emit(
-          "usb-devices",
-          stdout.split("\n").filter((d) => d !== ""),
-        );
-      });
+    socket.on("register-event-listeners", () => {
+      manager.registerListeners(socket);
     });
 
-    socket.on("connect-device", (device) => {
-      manager.connect(socket, device);
-    });
-
-    socket.on("disconnect-device", () => {
-      manager.disconnect(socket);
-    });
-
-    socket.on("check-connected", () => {
-      socket.emit("check-connected", manager.connected);
+    socket.on("check-proves-connected", async () => {
+      socket.emit("check-proves-connected", manager.connected);
     });
   });
+}
+
+// Find the PROVESKit serial port
+async function findDevicePort() {
+  const bindings = autoDetect();
+
+  try {
+    const ports = await bindings.list();
+    const device = ports.find((port) => {
+      // check for the proveskit vendorId and productId
+      return port.vendorId === "1209" && port.productId === "0011";
+    });
+
+    if (device) {
+      return device.path;
+    } else {
+      return null;
+    }
+  } catch (e) {
+    console.error("Failed to search for ports: ", e);
+    return null;
+  }
+}
+
+async function checkProvesConnected(): Promise<
+  | {
+      status: false;
+      path: null;
+    }
+  | { status: true; path: string }
+> {
+  const result = await findDevicePort();
+  if (result) {
+    return { status: true, path: result };
+  } else {
+    return { status: false, path: null };
+  }
+}
+
+async function loopUntilUsbConnected() {
+  while (true) {
+    console.log("Attempting to connect to PROVESKit...");
+    try {
+      const result = await checkProvesConnected();
+      if (result.status) {
+        console.log("USB connected");
+        manager.connect();
+        break;
+      }
+
+      await new Promise((res) => setTimeout(res, 5000));
+    } catch (e) {
+      console.error("Failed to check for USB devices: ", e);
+      await new Promise((res) => setTimeout(res, 5000));
+    }
+  }
 }
