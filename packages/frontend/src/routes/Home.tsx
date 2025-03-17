@@ -1,27 +1,17 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useState } from "react";
 import { FaBug, FaCheck, FaInfoCircle } from "react-icons/fa";
 import { IoWarning } from "react-icons/io5";
 import { IconType } from "react-icons/lib";
 import { MdError, MdErrorOutline } from "react-icons/md";
 import { z } from "zod";
+import { LoggingContext } from "../context/LoggingContext";
 import { WebsocketContext } from "../context/WebsocketContext";
 
 export default function Home() {
-  const [msgs, setMsgs] = useState<string[]>([]);
   const [cmdInput, setCmdInput] = useState("");
+
+  const msgs = useContext(LoggingContext);
   const socket = useContext(WebsocketContext);
-
-  useEffect(() => {
-    if (socket) {
-      socket.on("terminal-data", (data) => {
-        setMsgs((prev) => [data, ...prev]);
-      });
-    }
-
-    return () => {
-      socket?.off("terminal-data");
-    };
-  }, [socket]);
 
   return (
     <div className="w-screen p-4">
@@ -39,22 +29,25 @@ export default function Home() {
         })}
       </div>
       <div className="flex h-12 items-center gap-2">
-        <input
-          type="text"
-          value={cmdInput}
-          onChange={(evt) => setCmdInput(evt.target.value)}
-          className="border-2 h-10 rounded-md border-neutral-600"
-        />
-        <button
-          className="bg-green-600 text-white px-3 py-2 rounded-md hover:cursor-pointer"
-          onClick={() => {
-            console.log(cmdInput);
+        <form
+          action={() => {
             socket?.emit("send-command", cmdInput);
             setCmdInput("");
           }}
         >
-          Send Command
-        </button>
+          <input
+            type="text"
+            value={cmdInput}
+            onChange={(evt) => setCmdInput(evt.target.value)}
+            className="border-2 h-10 rounded-md border-neutral-600"
+          />
+          <button
+            className="bg-green-600 text-white px-3 py-2 rounded-md hover:cursor-pointer"
+            type="submit"
+          >
+            Send Command
+          </button>
+        </form>
         <button
           className="bg-green-600 text-white px-3 py-2 rounded-md hover:cursor-pointer"
           onClick={() => {
