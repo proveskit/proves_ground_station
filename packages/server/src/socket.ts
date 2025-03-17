@@ -1,4 +1,3 @@
-import { exec } from "child_process";
 import { Server as HttpServer } from "http";
 import { ReadlineParser, SerialPort } from "serialport";
 import { autoDetect } from "@serialport/bindings-cpp";
@@ -49,8 +48,12 @@ class SerialManager {
     });
   }
 
-  connect(socket: Socket, device: string) {
+  async connect(socket: Socket) {
     if (this.conn) return;
+
+    const device = await findDevicePort();
+
+    if (!device) return;
 
     this.conn = new SerialPort({
       path: device,
@@ -74,7 +77,7 @@ class SerialManager {
   disconnect(socket: Socket) {
     if (!this.conn) return;
 
-    this.conn?.close();
+    this.conn.close();
     this.conn = null;
     this.parser = null;
     this.connected = { connected: false };
@@ -87,7 +90,6 @@ class SerialManager {
   }
 
   checkConnected(socket: Socket) {
-    console.log("???????????????/");
     socket.emit("check-connected", this.connected);
   }
 
@@ -130,31 +132,12 @@ export function initializeWs(server: HttpServer) {
     }
 
     // Websocket Events
-    socket.on("usb-devices", () => {
-      exec("ls /dev/tty.usbmodem*", (error, stdout) => {
-        if (error) {
-          socket.emit("usb-devices", []);
-          return;
-        }
-        socket.emit(
-          "usb-devices",
-          stdout.split("\n").filter((d) => d !== ""),
-        );
-      });
+    socket.on("check-proves-connected", async () => {
+      socket.emit("check-proves-connected", await checkProvesConnected());
     });
 
-    socket.on("check-proves-connected", () => {
-      findDevicePort().then((result) => {
-        if (result) {
-          socket.emit("check-proves-connected", { status: true, path: result });
-        } else {
-          socket.emit("check-proves-connected", { status: false, path: null });
-        }
-      });
-    });
-
-    socket.on("connect-device", (device) => {
-      manager.connect(socket, device);
+    socket.on("connect-device", () => {
+      manager.connect(socket);
     });
 
     socket.on("disconnect-device", () => {
@@ -174,6 +157,7 @@ async function findDevicePort() {
   try {
     const ports = await bindings.list();
     const device = ports.find((port) => {
+      // check for the proveskit vendorId and productId
       return port.vendorId === "1209" && port.productId === "0011";
     });
 
@@ -185,5 +169,17 @@ async function findDevicePort() {
   } catch (e) {
     console.error("Failed to search for ports: ", e);
     return null;
+  }
+}
+
+async function checkProvesConnected(): Promise<{
+  status: boolean;
+  path: string | null;
+}> {
+  const result = await findDevicePort();
+  if (result) {
+    return { status: true, path: result };
+  } else {
+    return { status: false, path: null };
   }
 }

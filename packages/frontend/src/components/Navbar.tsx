@@ -12,36 +12,27 @@ const LINKS: { name: string; href: string }[] = [
 ];
 
 export default function Navbar() {
-  const [usbDevices, setUsbDevices] = useState<string[]>([]);
-  const [activeDevice, setActiveDevice] = useState<string>("");
+  const [usbConnected, setUsbConnected] = useState<
+    { status: false; path: null } | { status: true; path: string }
+  >({ status: false, path: null });
 
   const socket = useContext(WebsocketContext);
   const connectionCtx = useContext(SatelliteContext)!;
 
   useEffect(() => {
     if (socket) {
-      socket.on("usb-devices", (data) => {
-        setUsbDevices(data);
-        setActiveDevice(data[0]);
-      });
-
       socket.on("check-connected", (data) => {
         connectionCtx.setConnection(data);
       });
 
       socket.on("check-proves-connected", (result) => {
-        console.log(result);
+        setUsbConnected(result);
       });
 
       socket.emit("check-connected");
-      socket.emit("usb-devices");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socket]);
-
-  const refreshDevices = () => {
-    socket?.emit("usb-devices");
-  };
 
   const checkProvesConnected = () => {
     socket?.emit("check-proves-connected");
@@ -60,54 +51,38 @@ export default function Navbar() {
         <div>
           <div className="flex gap-3 items-center">
             <button
-              onClick={checkProvesConnected}
               className="hover:cursor-pointer"
+              onClick={checkProvesConnected}
             >
-              Check Proves Connected
-            </button>
-            <button onClick={refreshDevices} className="hover:cursor-pointer">
               <FaSync />
             </button>
-            {usbDevices.length > 0 ? (
-              <select
-                value={activeDevice}
-                className="border-2 h-8 rounded-sm border-neutral-400"
+            {!usbConnected.status ? (
+              <p>PROVESKit Not Connected</p>
+            ) : !connectionCtx.connection.connected ? (
+              <button
+                className="bg-white text-black px-3 py-2 rounded-md hover:cursor-pointer"
+                onClick={() => {
+                  socket?.emit("connect-device");
+                  connectionCtx.setConnection({
+                    connected: true,
+                    deviceName: usbConnected.path,
+                    connectedAt: Date.now(),
+                  });
+                }}
               >
-                {usbDevices.map((device, idx) => (
-                  <option onClick={() => setActiveDevice(device)} key={idx}>
-                    {device}
-                  </option>
-                ))}
-              </select>
+                Connect
+              </button>
             ) : (
-              <p className="text-white">No devices found!</p>
+              <button
+                className="bg-red-500 text-white px-3 py-2 rounded-md hover:cursor-pointer"
+                onClick={() => {
+                  socket?.emit("disconnect-device");
+                  connectionCtx.setConnection({ connected: false });
+                }}
+              >
+                Disconnect
+              </button>
             )}
-            {usbDevices.length > 0 &&
-              (!connectionCtx.connection.connected ? (
-                <button
-                  className="bg-white text-black px-3 py-2 rounded-md hover:cursor-pointer"
-                  onClick={() => {
-                    socket?.emit("connect-device", activeDevice);
-                    connectionCtx.setConnection({
-                      connected: true,
-                      deviceName: activeDevice,
-                      connectedAt: Date.now(),
-                    });
-                  }}
-                >
-                  Connect
-                </button>
-              ) : (
-                <button
-                  className="bg-red-500 text-white px-3 py-2 rounded-md hover:cursor-pointer"
-                  onClick={() => {
-                    socket?.emit("disconnect-device");
-                    connectionCtx.setConnection({ connected: false });
-                  }}
-                >
-                  Disconnect
-                </button>
-              ))}
           </div>
         </div>
       </div>
