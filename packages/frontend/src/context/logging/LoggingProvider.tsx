@@ -6,14 +6,22 @@ export function LoggingProvider({ children }: { children: React.ReactNode }) {
   const [msgs, setMsgs] = useState<string[]>([]);
   const socket = useContext(WebsocketContext);
 
+  const addMsg = (msg: string) => {
+    setMsgs((prevMsgs) => {
+      const newMsgs = [msg, ...prevMsgs];
+
+      if (newMsgs.length > 300) {
+        return newMsgs.slice(0, 300);
+      }
+
+      return newMsgs;
+    });
+  };
+
   useEffect(() => {
     if (socket) {
       socket.on("terminal-data", (data) => {
-        if (msgs.length > 300) {
-          msgs.pop();
-        }
-
-        setMsgs((prev) => [data, ...prev]);
+        addMsg(data);
       });
     }
 
