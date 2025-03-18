@@ -11,20 +11,37 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Switch } from "@/components/ui/switch";
 
 export default function Home() {
   const [cmdInput, setCmdInput] = useState("");
+  const [rawDisplay, setRawDisplay] = useState(false);
 
   const msgs = useContext(LoggingContext);
   const socket = useContext(WebsocketContext);
 
   return (
     <div className="w-screen h-screen flex flex-col p-4">
-      <div className="flex items-center">
+      <div className="flex justify-between items-center">
         <p className="font-bold text-2xl mb-3">Logging</p>
+        <div className="flex items-center gap-2">
+          <Switch
+            className="hover:cursor-pointer"
+            checked={rawDisplay}
+            onCheckedChange={setRawDisplay}
+          />
+          <p>Show Raw Logs</p>
+        </div>
       </div>
       <div className="w-full gap-3 flex-grow overflow-scroll bg-neutral-100 flex flex-col-reverse rounded-md shadow-sm p-2">
         {msgs.map((msg, idx) => {
+          if (rawDisplay) {
+            return (
+              <p key={idx} className="font-mono">
+                {msg}
+              </p>
+            );
+          }
           try {
             const validatedLog = LogSchema.parse(JSON.parse(msg));
             return <FormattedLog log={validatedLog} key={idx} />;
