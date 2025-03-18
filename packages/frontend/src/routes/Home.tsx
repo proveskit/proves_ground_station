@@ -19,11 +19,11 @@ export default function Home() {
   const socket = useContext(WebsocketContext);
 
   return (
-    <div className="w-screen p-4">
+    <div className="w-screen h-screen flex flex-col p-4">
       <div className="flex items-center">
         <p className="font-bold text-2xl mb-3">Logging</p>
       </div>
-      <div className="w-full gap-3 h-200 overflow-scroll bg-neutral-100 flex flex-col-reverse rounded-md shadow-sm p-2">
+      <div className="w-full gap-3 flex-grow overflow-scroll bg-neutral-100 flex flex-col-reverse rounded-md shadow-sm p-2">
         {msgs.map((msg, idx) => {
           try {
             const validatedLog = LogSchema.parse(JSON.parse(msg));
@@ -33,7 +33,7 @@ export default function Home() {
           }
         })}
       </div>
-      <div className="flex h-12 items-center gap-2">
+      <div className="flex h-12 items-center gap-2 pt-3">
         <form
           action={() => {
             socket?.emit("send-command", cmdInput);
