@@ -1,11 +1,16 @@
 import { useContext, useState } from "react";
 import { FaBug, FaCheck, FaInfoCircle } from "react-icons/fa";
-import { IoWarning } from "react-icons/io5";
+import { IoChevronDownOutline, IoWarning } from "react-icons/io5";
 import { IconType } from "react-icons/lib";
 import { MdError, MdErrorOutline } from "react-icons/md";
 import { z } from "zod";
 import { LoggingContext } from "../context/LoggingContext";
 import { WebsocketContext } from "../context/WebsocketContext";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 export default function Home() {
   const [cmdInput, setCmdInput] = useState("");
@@ -102,6 +107,8 @@ const BG_COLORS: { [key: string]: string } = {
 
 function FormattedLog({ log }: { log: Log }) {
   const LogIcon = LOG_ICONS[log.level];
+  const extraParams = omit(log, ["msg", "time", "level"]);
+
   return (
     <div
       className={`w-full min-h-14 ${BG_COLORS[log.level]} justify-between rounded-md shadow-md flex gap-2 items-center px-4`}
@@ -109,11 +116,24 @@ function FormattedLog({ log }: { log: Log }) {
       <div className="flex items-center gap-2">
         <LogIcon size={24} />
         <p>{log.msg}</p>
-        <div className="bg-neutral-400">
-          {Object.entries(omit(log, ["msg", "time", "level"])).map(([k, v]) => (
-            <p key={k}>{`${k}: ${v}`}</p>
-          ))}
-        </div>
+        {Object.entries(extraParams).length > 0 && (
+          <Popover>
+            <PopoverTrigger className="flex items-center gap-1 hover:cursor-pointer bg-neutral-300 py-1.5 px-2 rounded-sm">
+              <IoChevronDownOutline size={12} />
+              <p className="text-sm">Show Extra Data</p>
+            </PopoverTrigger>
+            <PopoverContent>
+              <div className="flex items-center gap-2 flex-col h-75 overflow-scroll">
+                {Object.entries(extraParams).map(([k, v]) => (
+                  <div className="bg-neutral-200 p-1 rounded-md w-full">
+                    <p className="font-bold">{k}</p>
+                    <p>{v}</p>
+                  </div>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+        )}
       </div>
       <p className="text-neutral-600 text-sm">{log.time}</p>
     </div>
