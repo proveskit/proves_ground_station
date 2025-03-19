@@ -1,8 +1,9 @@
 import { useContext, useState } from "react";
 import { FaBug, FaCheck, FaInfoCircle } from "react-icons/fa";
 import { IoChevronDownOutline, IoWarning } from "react-icons/io5";
+import { RxDownload } from "react-icons/rx";
 import { IconType } from "react-icons/lib";
-import { MdError, MdErrorOutline } from "react-icons/md";
+import { MdError, MdErrorOutline, MdOutlineContentCopy } from "react-icons/md";
 import { z } from "zod";
 import { LoggingContext } from "../context/LoggingContext";
 import { WebsocketContext } from "../context/WebsocketContext";
@@ -24,16 +25,38 @@ export default function Home() {
     <div className="w-screen h-screen flex flex-col p-4">
       <div className="flex justify-between items-center">
         <p className="font-bold text-2xl mb-3">Logging</p>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <Switch
             className="hover:cursor-pointer"
             checked={rawDisplay}
             onCheckedChange={setRawDisplay}
           />
           <p>Show Raw Logs</p>
+          <Popover>
+            <PopoverTrigger className="bg-blue-600 rounded-md px-3 py-1.5 text-white hover:cursor-pointer flex items-center gap-2">
+              <p>Export Logs</p>
+              <IoChevronDownOutline />
+            </PopoverTrigger>
+            <PopoverContent className="flex p-0 flex-col items-center w-64 mr-4">
+              <button
+                className="rounded-md w-full h-10 px-4 flex items-center gap-3 hover:bg-neutral-200 transition-colors hover:cursor-pointer"
+                onClick={() => copyLogsToClipboard(msgs)}
+              >
+                <MdOutlineContentCopy />
+                Copy Logs to Clipboard
+              </button>
+              <button
+                className="rounded-md w-full h-10 px-4 flex items-center gap-3 hover:bg-neutral-200 transition-colors hover:cursor-pointer"
+                onClick={() => downloadLogs(msgs)}
+              >
+                <RxDownload />
+                Download Logs
+              </button>
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
-      <div className="w-full gap-3 flex-grow overflow-scroll bg-neutral-100 flex flex-col-reverse rounded-md shadow-sm p-2">
+      <div className="w-full gap-3 flex-grow overflow-scroll bg-neutral-100 flex flex-col-reverse rounded-md shadow-sm p-2 mt-2">
         {msgs.map((msg, idx) => {
           if (rawDisplay) {
             return (
@@ -46,7 +69,11 @@ export default function Home() {
             const validatedLog = LogSchema.parse(JSON.parse(msg));
             return <FormattedLog log={validatedLog} key={idx} />;
           } catch {
-            return <p>{msg}</p>;
+            return (
+              <p key={idx} className="font-mono">
+                {msg}
+              </p>
+            );
           }
         })}
       </div>
@@ -89,6 +116,28 @@ export default function Home() {
       </div>
     </div>
   );
+}
+
+function copyLogsToClipboard(msgs: string[]) {
+  let result = "";
+  msgs.map((m) => {
+    result += `${m}\n`;
+  });
+
+  window.navigator.clipboard.writeText(result);
+}
+
+function downloadLogs(msgs: string[]) {
+  let result = "";
+  msgs.map((m) => {
+    result += `${m},\n`;
+  });
+  result = "[\n" + result + "]";
+
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([result], { type: "text/plain" }));
+  a.download = "logs.json";
+  a.click();
 }
 
 const LogSchema = z
