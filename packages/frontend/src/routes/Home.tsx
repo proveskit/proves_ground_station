@@ -13,10 +13,19 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export default function Home() {
   const [cmdInput, setCmdInput] = useState("");
   const [rawDisplay, setRawDisplay] = useState(false);
+  const [filterState, setFilterState] = useState<{ [key: string]: boolean }>({
+    NOTSET: true,
+    DEBUG: true,
+    INFO: true,
+    WARNING: true,
+    ERROR: true,
+    CRITICAL: true,
+  });
 
   const msgs = useContext(LoggingContext);
   const socket = useContext(WebsocketContext);
@@ -32,6 +41,28 @@ export default function Home() {
             onCheckedChange={setRawDisplay}
           />
           <p>Show Raw Logs</p>
+          <Popover>
+            <PopoverTrigger className="bg-blue-600 rounded-md px-3 py-1.5 text-white hover:cursor-pointer flex items-center gap-2">
+              Filters
+              <IoChevronDownOutline />
+            </PopoverTrigger>
+            <PopoverContent className="flex flex-col gap-3 w-42 mr-4">
+              {Object.keys(filterState).map((k, idx) => (
+                <div className="flex items-center gap-2" key={idx}>
+                  <Checkbox
+                    checked={filterState[k]}
+                    onCheckedChange={(c) =>
+                      setFilterState((oldState) => ({
+                        ...oldState,
+                        [k]: c as boolean,
+                      }))
+                    }
+                  />
+                  <p>{k}</p>
+                </div>
+              ))}
+            </PopoverContent>
+          </Popover>
           <Popover>
             <PopoverTrigger className="bg-blue-600 rounded-md px-3 py-1.5 text-white hover:cursor-pointer flex items-center gap-2">
               <p>Export Logs</p>
@@ -58,15 +89,20 @@ export default function Home() {
       </div>
       <div className="w-full gap-3 flex-grow overflow-scroll bg-neutral-100 flex flex-col-reverse rounded-md shadow-sm p-2 mt-2">
         {msgs.map((msg, idx) => {
-          if (rawDisplay) {
-            return (
-              <p key={idx} className="font-mono">
-                {msg}
-              </p>
-            );
-          }
           try {
             const validatedLog = LogSchema.parse(JSON.parse(msg));
+            if (!filterState[validatedLog.level]) {
+              return;
+            }
+
+            if (rawDisplay) {
+              return (
+                <p key={idx} className="font-mono">
+                  {msg}
+                </p>
+              );
+            }
+
             return <FormattedLog log={validatedLog} key={idx} />;
           } catch {
             return (
