@@ -9,6 +9,7 @@ import Settings from "./routes/Settings";
 import Files from "./routes/Files";
 import { WebsocketContextProvider } from "./context/WebsocketContext";
 import { SatelliteContextProvider } from "./context/SatelliteContext";
+import { LoggingContextProvider } from "./context/LoggingContext";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -16,14 +17,16 @@ createRoot(document.getElementById("root")!).render(
       <main className="min-w-screen min-h-screen">
         <WebsocketContextProvider>
           <SatelliteContextProvider>
-            <Routes>
-              <Route element={<Navbar />}>
-                <Route index path="/" element={<Home />} />
-                <Route path="/commands" element={<Commands />} />
-                <Route path="/files" element={<Files />} />
-                <Route path="/settings" element={<Settings />} />
-              </Route>
-            </Routes>
+            <LoggingContextProvider>
+              <Routes>
+                <Route element={<Navbar />}>
+                  <Route index path="/" element={<Home />} />
+                  <Route path="/commands" element={<Commands />} />
+                  <Route path="/files" element={<Files />} />
+                  <Route path="/settings" element={<Settings />} />
+                </Route>
+              </Routes>
+            </LoggingContextProvider>
           </SatelliteContextProvider>
         </WebsocketContextProvider>
       </main>
